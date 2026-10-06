@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Catch the Falling Stars</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Cinzel & Quicksand -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for mystical icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cinzel: ['Cinzel', 'serif'],
+                        quicksand: ['Quicksand', 'sans-serif'],
+                    },
+                    colors: {
+                        dreamNight: '#070614',
+                        dreamDeep: '#131130',
+                        dreamGlow: '#8b5cf6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #070614;
+            color: #e2e8f0;
+            overflow: hidden;
+            touch-action: none;
+        }
+        h1, h2, h3, .font-title {
+            font-family: 'Cinzel', serif;
+        }
+        /* Starry background animation */
+        .stars-bg {
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 40px 70px, #ffffff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 90px 40px, #ffd700, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 160px 120px, #c084fc, rgba(0,0,0,0)),
+                radial-gradient(1.5px 1.5px at 230px 180px, #38bdf8, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 350px 220px, #ffffff, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 400px 400px;
+            animation: twinkle 15s linear infinite;
+        }
+        @keyframes twinkle {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-400px); }
+        }
+        .nebula-glow {
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, rgba(30, 27, 75, 0.05) 50%, transparent 70%);
+            filter: blur(60px);
+        }
+        /* Glassmorphism panel */
+        .glass-panel {
+            background: rgba(20, 20, 45, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        /* Sparkle effect */
+        .sparkle {
+            position: absolute;
+            pointer-events: none;
+            background: radial-gradient(circle, #fff 0%, #ffd700 50%, transparent 100%);
+            border-radius: 50%;
+            animation: sparkleAnim 0.8s ease-out forwards;
+            z-index: 9999;
+        }
+        @keyframes sparkleAnim {
+            0% { transform: translate(0, 0) scale(0.3) rotate(0deg); opacity: 1; }
+            50% { opacity: 0.9; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(1.4) rotate(180deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="h-full w-full flex flex-col justify-between relative selection:bg-purple-500 selection:text-white">
+
+    <!-- Background Space & Nebula -->
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <div class="absolute inset-0 bg-[#060512]"></div>
+        <div class="absolute inset-0 stars-bg opacity-70"></div>
+        <div class="absolute -top-32 -left-32 w-96 h-96 rounded-full nebula-glow"></div>
+        <div class="absolute top-1/3 -right-32 w-[500px] h-[500px] rounded-full nebula-glow" style="background: radial-gradient(circle, rgba(236, 72, 153, 0.12) 0%, rgba(15, 23, 42, 0.1) 60%, transparent 70%);"></div>
+    </div>
+
+    <!-- UI Overlay Header -->
+    <header class="relative z-20 flex justify-between items-center px-6 py-4 glass-panel border-b border-purple-500/20">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 rounded-xl bg-purple-600/30 border border-purple-500/40 text-cyan-300">
+                <i class="fa-solid fa-basket-shopping text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-title font-bold text-sm md:text-xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-purple-300 to-pink-300">
+                    Catch the Falling Stars
+                </h1>
+                <p class="text-[10px] md:text-xs text-purple-300/70">Magical Dream Catcher Arcade</p>
+            </div>
+        </div>
+
+        <!-- Score & Stats -->
+        <div class="flex items-center space-x-4 md:space-x-8">
+            <div class="text-right">
+                <span class="block text-[10px] md:text-xs uppercase tracking-wider text-purple-300">Score</span>
+                <span id="scoreDisplay" class="font-title font-bold text-lg md:text-2xl text-cyan-300">0</span>
+            </div>
+            <div class="text-right">
+                <span class="block text-[10px] md:text-xs uppercase tracking-wider text-pink-300">Lives</span>
+                <div id="livesDisplay" class="flex space-x-1 text-pink-400 text-sm md:text-base">
+                    <i class="fa-solid fa-heart"></i>
+                    <i class="fa-solid fa-heart"></i>
+                    <i class="fa-solid fa-heart"></i>
+                </div>
+            </div>
+            <div class="hidden sm:block text-right">
+                <span class="block text-[10px] md:text-xs uppercase tracking-wider text-yellow-300">High Score</span>
+                <span id="highScoreDisplay" class="font-title font-bold text-lg md:text-2xl text-yellow-300">0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Game Canvas Container -->
+    <div class="relative z-10 flex-1 flex items-center justify-center overflow-hidden p-2">
+        <div id="gameContainer" class="relative w-full max-w-4xl h-full max-h-[750px] glass-panel rounded-2xl overflow-hidden shadow-2xl border border-purple-500/30 flex flex-col">
+            
+            <!-- Canvas for Game Rendering -->
+            <canvas id="gameCanvas" class="w-full h-full block cursor-none"></canvas>
+
+            <!-- Start Screen Overlay -->
+            <div id="startScreen" class="absolute inset-0 bg-[#070614]/90 backdrop-blur-md flex flex-col items-center justify-center text-center p-6 z-30">
+                <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-purple-600 to-cyan-400 p-1 mb-6 shadow-lg shadow-purple-500/40 animate-bounce">
+                    <div class="w-full h-full bg-[#0b0b19] rounded-full flex items-center justify-center text-cyan-300 text-3xl">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                </div>
+                <h2 class="font-title font-bold text-3xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-purple-300 to-pink-300 mb-3">
+                    Catch the Falling Stars
+                </h2>
+                <p class="text-sm md:text-base text-purple-200/80 max-w-md mb-8 font-quicksand">
+                    Move the mystical golden basket using your mouse, finger touch, or <span class="text-cyan-300 font-semibold">Left/Right Arrow keys</span> to catch falling starlight. Avoid ominous red dark-matter orbs!
+                </p>
+                <button id="startBtn" class="px-8 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-500 text-white font-bold font-title text-base md:text-lg shadow-lg shadow-purple-900/50 hover:scale-105 transition-all duration-300 cursor-pointer">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-2"></i>Begin Stargazing
+                </button>
+            </div>
+
+            <!-- Game Over Screen Overlay -->
+            <div id="gameOverScreen" class="absolute inset-0 bg-[#070614]/92 backdrop-blur-md flex flex-col items-center justify-center text-center p-6 z-30 hidden">
+                <div class="text-pink-400 text-5xl mb-4 animate-pulse">
+                    <i class="fa-solid fa-moon"></i>
+                </div>
+                <h2 class="font-title font-bold text-3xl md:text-4xl text-white mb-2">
+                    Dream Journey Ended
+                </h2>
+                <p class="text-sm text-purple-300 mb-6">The night sky rests as your starlight fades.</p>
+                
+                <div class="glass-panel p-6 rounded-2xl mb-8 w-64 border border-purple-500/40 space-y-3">
+                    <div>
+                        <span class="block text-xs uppercase tracking-wider text-purple-300">Final Score</span>
+                        <span id="finalScore" class="font-title font-bold text-3xl text-cyan-300">0</span>
+                    </div>
+                    <div class="border-t border-purple-500/20 pt-2">
+                        <span class="block text-xs uppercase tracking-wider text-purple-300">High Score</span>
+                        <span id="finalHighScore" class="font-title font-bold text-xl text-yellow-300">0</span>
+                    </div>
+                </div>
+
+                <button id="restartBtn" class="px-8 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 via-purple-600 to-pink-600 text-white font-bold font-title text-base md:text-lg shadow-lg shadow-cyan-900/50 hover:scale-105 transition-all duration-300 cursor-pointer">
+                    <i class="fa-solid fa-rotate-right mr-2"></i>Play Again
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="py-4 text-center text-xs text-purple-400/60 border-t border-purple-900/40 bg-[#060512] relative z-20">
+        <p>Catch the Falling Stars &bull; Magical Starry Night Arcade &bull; All rights reserved.</p>
+    </footer>
+
+    <!-- Game & Interaction Logic -->
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('gameContainer');
+
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const highScoreDisplay = document.getElementById('highScoreDisplay');
+        const finalScore = document.getElementById('finalScore');
+        const finalHighScore = document.getElementById('finalHighScore');
+        const livesDisplay = document.getElementById('livesDisplay');
+
+        // Game State Variables
+        let gameState = 'START'; // START, PLAYING, GAMEOVER
+        let score = 0;
+        let lives = 3;
+        let highScore = localStorage.getItem('star_game_highscore') || 0;
+        highScoreDisplay.textContent = highScore;
+
+        let basket = {
+            x: 0,
+            y: 0,
+            width: 110,
+            height: 55,
+            speed: 10,
+            dx: 0
+        };
+
+        let items = [];
+        let particles = [];
+        let spawnTimer = 0;
+        let spawnInterval = 45; // Frames between item spawns
+        let gameSpeedMultiplier = 1;
+
+        // Resize Canvas to fit container cleanly
+        function resizeCanvas() {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            basket.y = canvas.height - basket.height - 25;
+            if (gameState === 'START') {
+                basket.x = (canvas.width - basket.width) / 2;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Item types configuration
+        const itemTypes = [
+            { type: 'star', color: '#ffd700', points: 10, radius: 14, glow: '#ffea75', prob: 0.50 },
+            { type: 'moon', color: '#38bdf8', points: 25, radius: 18, glow: '#7dd3fc', prob: 0.20 },
+            { type: 'crystal', color: '#c084fc', points: 50, radius: 16, glow: '#e879f9', prob: 0.12 },
+            { type: 'hazard', color: '#f43f5e', points: -20, radius: 15, glow: '#fb7185', prob: 0.18 } // Dark orb
+        ];
+
+        function getRandomItemType() {
+            const rand = Math.random();
+            let cumulative = 0;
+            for (const item of itemTypes) {
+                cumulative += item.prob;
+                if (rand <= cumulative) return item;
+            }
+            return itemTypes[0];
+        }
+
+        // Keyboard Controls
+        let keys = { ArrowLeft: false, ArrowRight: false };
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') keys.ArrowLeft = true;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.ArrowRight = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') keys.ArrowLeft = false;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.ArrowRight = false;
+        });
+
+        // Mouse & Touch Controls
+        canvas.addEventListener('mousemove', (e) => {
+            if (gameState !== 'PLAYING') return;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            basket.x = mouseX - basket.width / 2;
+            clampBasket();
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (gameState !== 'PLAYING') return;
+            if (e.touches && e.touches[0]) {
+                const rect = canvas.getBoundingClientRect();
+                const touchX = e.touches[0].clientX - rect.left;
+                basket.x = touchX - basket.width / 2;
+                clampBasket();
+            }
+        }, { passive: true });
+
+        function clampBasket() {
+            if (basket.x < 10) basket.x = 10;
+            if (basket.x > canvas.width - basket.width - 10) {
+                basket.x = canvas.width - basket.width - 10;
+            }
+        }
+
+        // Particle Burst FX on Catch / Miss
+        function createParticles(x, y, color, count = 12) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 5 + 2;
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    radius: Math.random() * 4 + 2,
+                    color: color,
+                    alpha: 1,
+                    decay: Math.random() * 0.03 + 0.02
+                });
+            }
+        }
+
+        // Start Game
+        function startGame() {
+            score = 0;
+            lives = 3;
+            gameSpeedMultiplier = 1;
+            spawnTimer = 0;
+            items = [];
+            particles = [];
+            scoreDisplay.textContent = score;
+            updateLivesDisplay();
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            gameState = 'PLAYING';
+        }
+
+        function updateLivesDisplay() {
+            let hearts = '';
+            for (let i = 0; i < 3; i++) {
+                if (i < lives) {
+                    hearts += '<i class="fa-solid fa-heart text-pink-400"></i> ';
+                } else {
+                    hearts += '<i class="fa-regular fa-heart text-purple-600"></i> ';
+                }
+            }
+            livesDisplay.innerHTML = hearts;
+        }
+
+        function gameOver() {
+            gameState = 'GAMEOVER';
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('star_game_highscore', highScore);
+                highScoreDisplay.textContent = highScore;
+            }
+            finalScore.textContent = score;
+            finalHighScore.textContent = highScore;
+            gameOverScreen.classList.remove('hidden');
+        }
+
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+
+        // Main Game Loop
+        function update() {
+            if (gameState !== 'PLAYING') return;
+
+            // Keyboard movement fallback
+            if (keys.ArrowLeft) basket.x -= basket.speed;
+            if (keys.ArrowRight) basket.x += basket.speed;
+            clampBasket();
+
+            // Spawn items
+            spawnTimer++;
+            if (spawnTimer >= Math.max(15, spawnInterval - Math.floor(score / 100))) {
+                spawnTimer = 0;
+                const template = getRandomItemType();
+                items.push({
+                    x: Math.random() * (canvas.width - 40) + 20,
+                    y: -30,
+                    vy: (Math.random() * 2 + 2.5) * gameSpeedMultiplier,
+                    ...template
+                });
+            }
+
+            // Increase difficulty gradually
+            gameSpeedMultiplier = 1 + (score / 400);
+
+            // Update items
+            for (let i = items.length - 1; i >= 0; i--) {
+                let item = items[i];
+                item.y += item.vy;
+
+                // Check collision with Basket
+                // Basket bounding box: [basket.x, basket.y, basket.width, basket.height]
+                if (
+                    item.y + item.radius >= basket.y + 10 &&
+                    item.y - item.radius <= basket.y + basket.height &&
+                    item.x + item.radius >= basket.x &&
+                    item.x - item.radius <= basket.x + basket.width
+                ) {
+                    // Collision detected!
+                    if (item.type === 'hazard') {
+                        lives--;
+                        updateLivesDisplay();
+                        createParticles(item.x, item.y, '#f43f5e', 18);
+                        if (lives <= 0) {
+                            gameOver();
+                        }
+                    } else {
+                        score += item.points;
+                        scoreDisplay.textContent = score;
+                        createParticles(item.x, item.y, item.color, 15);
+                    }
+                    items.splice(i, 1);
+                    continue;
+                }
+
+                // Check if item falls off screen
+                if (item.y > canvas.height + 40) {
+                    if (item.type !== 'hazard') {
+                        // Missed a good star! Optional penalty or just drop
+                    }
+                    items.splice(i, 1);
+                }
+            }
+
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        // Render Graphics
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Basket (Magical Golden/Crystal Cagesque Basket)
+            ctx.save();
+            // Basket Glow
+            ctx.shadowColor = '#c084fc';
+            ctx.shadowBlur = 15;
+
+            // Basket Body Gradient
+            let basketGrad = ctx.createLinearGradient(basket.x, basket.y, basket.x, basket.y + basket.height);
+            basketGrad.addColorStop(0, '#e879f9');
+            basketGrad.addColorStop(0.5, '#a855f7');
+            basketGrad.addColorStop(1, '#6b21a8');
+
+            ctx.fillStyle = basketGrad;
+            ctx.strokeStyle = '#fbcfe8';
+            ctx.lineWidth = 2.5;
+
+            // Draw ornate curved basket shape
+            ctx.beginPath();
+            ctx.moveTo(basket.x + 10, basket.y);
+            ctx.lineTo(basket.x + basket.width - 10, basket.y);
+            ctx.quadraticCurveTo(basket.x + basket.width + 5, basket.y + basket.height / 2, basket.x + basket.width - 15, basket.y + basket.height);
+            ctx.lineTo(basket.x + 15, basket.y + basket.height);
+            ctx.quadraticCurveTo(basket.x - 5, basket.y + basket.height / 2, basket.x + 10, basket.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Basket weave pattern details
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(basket.x + 20, basket.y + 10);
+            ctx.lineTo(basket.x + basket.width - 20, basket.y + basket.height - 10);
+            ctx.moveTo(basket.x + basket.width - 20, basket.y + 10);
+            ctx.lineTo(basket.x + 20, basket.y + basket.height - 10);
+            ctx.stroke();
+
+            // Basket rim handle
+            ctx.beginPath();
+            ctx.ellipse(basket.x + basket.width / 2, basket.y, basket.width / 2, 8, 0, 0, Math.PI * 2);
+            ctx.fillStyle = '#f472b6';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.stroke();
+
+            ctx.restore();
+
+            // Draw Items (Stars, Moons, Crystals, Hazards)
+            for (let item of items) {
+                ctx.save();
+                ctx.shadowColor = item.glow;
+                ctx.shadowBlur = 12;
+                ctx.fillStyle = item.color;
+
+                if (item.type === 'star') {
+                    drawStar(ctx, item.x, item.y, 5, item.radius, item.radius / 2);
+                } else if (item.type === 'moon') {
+                    ctx.beginPath();
+                    ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Crescent shadow
+                    ctx.fillStyle = '#0b0b19';
+                    ctx.beginPath();
+                    ctx.arc(item.x + 5, item.y - 3, item.radius * 0.8, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (item.type === 'crystal') {
+                    ctx.beginPath();
+                    ctx.moveTo(item.x, item.y - item.radius);
+                    ctx.lineTo(item.x + item.radius * 0.8, item.y);
+                    ctx.lineTo(item.x, item.y + item.radius);
+                    ctx.lineTo(item.x - item.radius * 0.8, item.y);
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    // Hazard orb (Dark matter)
+                    ctx.beginPath();
+                    ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#fda4af';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            // Draw Particles
+            for (let p of particles) {
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Helper to draw a glowing star shape
+        function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius) {
+            let rot = (Math.PI / 2) * 3;
+            let x = cx;
+            let y = cy;
+            let step = Math.PI / spikes;
+
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerRadius);
+            for (let i = 0; i < spikes; i++) {
+                x = cx + Math.cos(rot) * outerRadius;
+                y = cy + Math.sin(rot) * outerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+
+                x = cx + Math.cos(rot) * innerRadius;
+                y = cy + Math.sin(rot) * innerRadius;
+                ctx.lineTo(x, y);
+                rot += step;
+            }
+            ctx.lineTo(cx, cy - outerRadius);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Main Animation Frame Loop
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        // ==========================================
+        // KIRAKIRA SPARKLE EFFECT ON TOUCH/CLICK
+        // ==========================================
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            const size = Math.random() * 8 + 6;
+            sparkle.style.width = `${size}px`;
+            sparkle.style.height = `${size}px`;
+            sparkle.style.left = `${x}px`;
+            sparkle.style.top = `${y}px`;
+
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 50 + 20;
+            sparkle.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+            sparkle.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
+
+            const colors = ['#fff', '#ffd700', '#38bdf8', '#ec4899', '#c084fc'];
+            sparkle.style.background = `radial-gradient(circle, ${colors[Math.floor(Math.random() * colors.length)]} 0%, rgba(255,255,255,0.2) 70%, transparent 100%)`;
+
+            document.body.appendChild(sparkle);
+            setTimeout(() => sparkle.remove(), 800);
+        }
+
+        window.addEventListener('click', (e) => {
+            for (let i = 0; i < 6; i++) createSparkle(e.clientX + (Math.random() - 0.5) * 30, e.clientY + (Math.random() - 0.5) * 30);
+        });
+
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches && e.touches[0]) {
+                for (let i = 0; i < 6; i++) createSparkle(e.touches[0].clientX + (Math.random() - 0.5) * 30, e.touches[0].clientY + (Math.random() - 0.5) * 30);
+            }
+        }, { passive: true });
+
+        // Initialize Loop
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>
